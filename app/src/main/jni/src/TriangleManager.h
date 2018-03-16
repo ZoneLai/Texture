@@ -39,5 +39,8 @@ private:
     GLint						_mvpMatrixLoc;
     GLint                       _sampler2DLoc;
     glm::mat4                   _mvpMatrix;
+    glm::mat4                   _modelMatrix;
+    glm::mat4                   _viewMatrix;
+    glm::mat4                   _projectionMatrix;
     uint8_t*                    _bmpBuffer;
 };

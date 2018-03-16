@@ -2,7 +2,14 @@ package com.zone.triangle;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.GLUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -24,12 +31,21 @@ public class TriangleRenderer implements GLSurfaceView.Renderer {
     public TriangleRenderer(Context context) {
         mContext = context;
         nativeOnCreate();
-        nativeSetAssetBmp(mContext.getAssets(), "cat.png");
     }
 
     @Override
     public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
         nativeInitGL(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT);
+        try {
+            InputStream inputStream = mContext.getAssets().open("cat.png");
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, nativeGetTextureId());
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+            bitmap.recycle();
+            inputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

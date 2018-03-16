@@ -20,6 +20,9 @@ TriangleManager::TriangleManager()
     , _mvpMatrixLoc(-1)
     , _sampler2DLoc(-1)
     , _mvpMatrix(glm::mat4(1.0f))
+    , _modelMatrix(glm::mat4(1.0f))
+    , _viewMatrix(glm::mat4(1.0f))
+    , _projectionMatrix(glm::mat4(1.0f))
     , _bmpBuffer(nullptr)
 {
 }
@@ -59,19 +62,19 @@ void TriangleManager::initGL(int widgetWidth, int widgetHeight) {
         _mvpMatrixLoc       = glGetUniformLocation(_sProgramPlay,   "u_MvpMatrix");
         _sampler2DLoc       = glGetUniformLocation(_sProgramPlay,   "u_Texture");
         GLfloat vertices[]  = {
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-             0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-
-            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-             0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-             0.5f,  0.5f, 0.0f, 1.0f, 1.0f
+            -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // 1
+             0.5f, -0.5f, 0.0f, 1.0f, 1.0f, // 2
+            -0.5f,  0.5f, 0.0f, 0.0f, 0.0f, // 3
+            -0.5f,  0.5f, 0.0f, 0.0f, 0.0f, // 3
+             0.5f, -0.5f, 0.0f, 1.0f, 1.0f, // 2
+             0.5f,  0.5f, 0.0f, 1.0f, 0.0f  // 4
         };
         glGenVertexArrays(1, &_vaoId);
         glBindVertexArray(_vaoId);
         glGenBuffers(1, &_vboBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, _vboBuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        // 顶点坐标
         glVertexAttribPointer(
             _positionLoc,
             3,
@@ -81,27 +84,26 @@ void TriangleManager::initGL(int widgetWidth, int widgetHeight) {
             (GLvoid*)0
         );
         glEnableVertexAttribArray(_positionLoc);
+        // 纹理坐标
         glVertexAttribPointer(
             _textCoordLoc,
-            3,
+            2,
             GL_FLOAT,
             GL_FALSE,
             5 * sizeof(GL_FLOAT),
-            (GLvoid*)(2 * sizeof(GL_FLOAT))
+            (GLvoid*)(3 * sizeof(GL_FLOAT))
         );
         glEnableVertexAttribArray(_textCoordLoc);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
-        // Step1 创建并绑定纹理对象
+        // 创建纹理
         glGenTextures(1, &_textureId);
         glBindTexture(GL_TEXTURE_2D, _textureId);
-        // Step2 设定wrap参数
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        // Step3 设定filter参数
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 587, 488, 0, GL_RGB, GL_UNSIGNED_BYTE, _bmpBuffer);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+       // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, _imageWidth, _imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, _bmpBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
     } else {
         LOGE("CompileShaderProgram===================");
@@ -125,8 +127,12 @@ void TriangleManager::drawFrame() {
 }
 
 void TriangleManager::onChange(int widgetWidth, int widgetHeight) {
-    _widgetWidth    = widgetWidth;
-    _widgetHeight   = widgetHeight;
+    _widgetWidth        = widgetWidth;
+    _widgetHeight       = widgetHeight;
+    _modelMatrix	    = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
+    _viewMatrix         = glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
+    _projectionMatrix   = glm::perspective(glm::radians(45.0f), static_cast<float>(_widgetWidth) / static_cast<float>(_widgetHeight), 0.1f, 100.0f);
+    _mvpMatrix		    = _projectionMatrix * _viewMatrix * _modelMatrix;
 }
 
 void TriangleManager::setAssetsBmp(AAssetManager* mgr,  const char* fileName) {
@@ -147,5 +153,5 @@ void TriangleManager::setAssetsBmp(AAssetManager* mgr,  const char* fileName) {
 }
 
 GLint TriangleManager::getCameraTextureId() {
-    return 0;
+    return _textureId;
 }
